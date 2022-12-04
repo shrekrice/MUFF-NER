@@ -12,4 +12,4 @@ transformers=3.0.0
 ## 1.3 代码运行
 ##### 训练Weibo数据集中的.all文件，并且将结果保留在result文件中：
 ``!python main.py --train data/WeiboNER/train.all.bmes --dev data/WeiboNER/dev.all.bmes --test data/WeiboNER/test.all.bmes --modelname Weibo --savedset data/Weibo.dset --lr=0.005 --hidden_dim 200 --num_iter=30 --resultfile="result/demo.txt"``
-##### 训练其他数据集代码类似
+##### （训练其他数据集代码类似）
