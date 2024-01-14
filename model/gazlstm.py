@@ -6,10 +6,10 @@ import numpy as np
 from model.crf import CRF
 from model.layers import NERmodel#传入带有LSTM的NERmodel
 from transformers.modeling_bert import BertModel
-#构建gazlstm类，获得tags, gaz_match
-class GazLSTM(nn.Module):
+#构建WPLSTM类，获得tags, gaz_match
+class WPLSTM(nn.Module):
     def __init__(self, data):
-        super(GazLSTM, self).__init__()
+        super(WPLSTM, self).__init__()
 
         self.gpu = data.HP_gpu
         self.use_biword = data.use_bigram
@@ -62,27 +62,30 @@ class GazLSTM(nn.Module):
         if self.use_bert:
             char_feature_dim = char_feature_dim + 768#使用bert+768，768为词向量维度
 
-        ## lstm model
-        if self.model_type == 'lstm':
-            lstm_hidden = self.hidden_dim
-            if self.bilstm_flag:
-                self.hidden_dim *= 2
-            self.NERmodel = NERmodel(model_type='lstm', input_dim=char_feature_dim, hidden_dim=lstm_hidden, num_layer=self.lstm_layer, biflag=self.bilstm_flag)
+
             #向NERmodel构建input_dim等输入参数
-        ## cnn model
-        if self.model_type == 'cnn':
-            self.NERmodel = NERmodel(model_type='cnn', input_dim=char_feature_dim, hidden_dim=self.hidden_dim, num_layer=self.num_layer, dropout=data.HP_dropout, gpu=self.gpu)
+        ## CNN model
+        if self.model_type == 'CNN':
+            self.NERmodel = NERmodel(model_type='CNN', input_dim=char_feature_dim, hidden_dim=self.hidden_dim, num_layer=self.num_layer, dropout=data.HP_dropout, gpu=self.gpu)
 
         ## attention model
         if self.model_type == 'transformer':
             self.NERmodel = NERmodel(model_type='transformer', input_dim=char_feature_dim, hidden_dim=self.hidden_dim, num_layer=self.num_layer, dropout=data.HP_dropout)
+
+        ## lstm model
+        if self.model_type == 'lstm':
+                lstm_hidden = self.hidden_dim
+                if self.bilstm_flag:
+                    self.hidden_dim *= 2
+                self.NERmodel = NERmodel(model_type='lstm', input_dim=char_feature_dim, hidden_dim=lstm_hidden,
+                                         num_layer=self.lstm_layer, biflag=self.bilstm_flag)
 
         self.drop = nn.Dropout(p=data.HP_dropout)#dropout层
         self.hidden2tag = nn.Linear(self.hidden_dim, data.label_alphabet_size+2)#加上两个标签
         self.crf = CRF(data.label_alphabet_size, self.gpu)#crf层
 
         if self.use_bert:
-            self.bert_encoder = BertModel.from_pretrained('hfl/chinese-bert-wwm')#利用Bert模型输出文本的embedding，可以更换自己想要的bert
+            self.bert_encoder = BertModel.from_pretrained('hfl/chinese-bert-wwm')#利用Bert模型输出文本的embedding
             for p in self.bert_encoder.parameters():
                 p.requires_grad = False#参数不需要求导
 
@@ -143,30 +146,30 @@ class GazLSTM(nn.Module):
 
             gaz_mask = gaz_mask_input.unsqueeze(-1).repeat(1,1,1,1,self.gaz_emb_dim)
 
-            gaz_embeds = gaz_embeds_d.data.masked_fill_(gaz_mask.data, 0)  #(b,l,4,g,ge)  ge:gaz_embed_dim
+            gaz_embeds = gaz_embeds_d.data.masked_fill_(gaz_mask.data, 0)
 
 
         if self.use_count:
-            count_sum = torch.sum(gaz_count, dim=3, keepdim=True)  #(b,l,4,gn)
-            count_sum = torch.sum(count_sum, dim=2, keepdim=True)  #(b,l,1,1)
+            count_sum = torch.sum(gaz_count, dim=3, keepdim=True)
+            count_sum = torch.sum(count_sum, dim=2, keepdim=True)
 
-            weights = gaz_count.div(count_sum)  #(b,l,4,g)
+            weights = gaz_count.div(count_sum)
             weights = weights*4
             weights = weights.unsqueeze(-1)
-            gaz_embeds = weights*gaz_embeds  #(b,l,4,g,e)
-            gaz_embeds = torch.sum(gaz_embeds, dim=3)  #(b,l,4,e)
+            gaz_embeds = weights*gaz_embeds
+            gaz_embeds = torch.sum(gaz_embeds, dim=3)
 
         else:
-            gaz_num = (gaz_mask_input == 0).sum(dim=-1, keepdim=True).float()  #(b,l,4,1)
-            gaz_embeds = gaz_embeds.sum(-2) / gaz_num  #(b,l,4,ge)/(b,l,4,1)
+            gaz_num = (gaz_mask_input == 0).sum(dim=-1, keepdim=True).float()
+            gaz_embeds = gaz_embeds.sum(-2) / gaz_num
 
-        gaz_embeds_cat = gaz_embeds.view(batch_size,seq_len,-1)  #(b,l,4*ge)
-
-
-        word_input_cat = torch.cat([word_inputs_d, gaz_embeds_cat], dim=-1)  #(b,l,we+4*ge)
+        gaz_embeds_cat = gaz_embeds.view(batch_size,seq_len,-1)
 
 
-        ### cat bert feature
+        word_input_cat = torch.cat([word_inputs_d, gaz_embeds_cat], dim=-1)
+
+
+
         if self.use_bert:
             seg_id = torch.zeros(bert_mask.size()).long().cuda()
             outputs = self.bert_encoder(batch_bert, bert_mask, seg_id)

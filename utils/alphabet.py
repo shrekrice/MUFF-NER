@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""
-Alphabet maps objects to integer ids. It provides two way mapping from the index to the objects.
-"""
+
 # Alphabet 将对象映射到整数 id。它提供了从索引到对象的两种映射方式
 import json
 import os

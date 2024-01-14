@@ -6,9 +6,9 @@ import torch.nn.functional as F
 import numpy as np
 import math, copy, time
 
-class CNNmodel(nn.Module):
+class MUFFmodel(nn.Module):
     def __init__(self, input_dim, hidden_dim, num_layer, dropout, gpu=True):
-        super(CNNmodel, self).__init__()
+        super(MUFFmodel, self).__init__()
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         self.num_layer = num_layer
@@ -202,18 +202,21 @@ class AttentionModel(nn.Module):
 
 
 #只看lstm的代码
-class NERmodel(nn.Module):
+class MuffNermodel(nn.Module):
 
     def __init__(self, model_type, input_dim, hidden_dim, num_layer, dropout=0.5, gpu=True, biflag=True):
-        super(NERmodel, self).__init__()
+        super(MuffNermodel, self).__init__()
         self.model_type = model_type#判断是什么类型的model
+
 
         if self.model_type == 'lstm':
             self.lstm = nn.LSTM(input_dim, hidden_dim, num_layers=num_layer, batch_first=True, bidirectional=biflag)#input_dim为输入嵌入的维度
+            #加一个注意力机制
+            #self.attention_layer=nn.Linear(hidden_dim*2,1 )
             self.drop = nn.Dropout(dropout)#使用dropout函数，单元归零的概率为0.5
 
         if self.model_type == 'cnn':
-            self.cnn = CNNmodel(input_dim, hidden_dim, num_layer, dropout, gpu)#这里的input_dim指的是标签数量，指的是为为一个词创建多少维的向量表示
+            self.cnn = MUFFmodel(input_dim, hidden_dim, num_layer, dropout, gpu)#这里的input_dim指的是标签数量，指的是为为一个词创建多少维的向量表示
 
         ## attention model
         if self.model_type == 'transformer':
@@ -230,6 +233,14 @@ class NERmodel(nn.Module):
             feature_out, hidden = self.lstm(input, hidden)#input：x的特征维度，就是数据立方体中的F，在NLP中就是一个词被embedding后的向量长度，这里的隐藏层为None
             #非双向LSTM的输出维度等于隐藏层的特征维度。lstm的输出维度为（seq_len,batch_size,hidden_dim）
             feature_out_d = self.drop(feature_out)
+            #add attention
+
+            #attention_weights=F.softmax(self.attention_layer(feature_out_d),dim=1)
+               #attention_outputs = torch.bmm(attention_weights.transpose(1, 2), lstm_outputs).squeeze()
+
+            #feature_out_d=torch.bmm(attention_weights.transpose(1,2),feature_out_d).squeeze()
+
+
 
         if self.model_type == 'cnn':
             feature_out_d = self.cnn(input)

@@ -36,12 +36,7 @@ def data_initialization(data, gaz_file, train_file, dev_file, test_file):#建立
 
 
 def predict_check(pred_variable, gold_variable, mask_variable):
-    """
-        input:
-            pred_variable (batch_size, sent_len): pred tag result, in numpy format
-            gold_variable (batch_size, sent_len): gold result variable
-            mask_variable (batch_size, sent_len): mask variable
-    """
+
 
     pred = pred_variable.cpu().data.numpy()
     gold = gold_variable.cpu().data.numpy()#标签
@@ -54,12 +49,7 @@ def predict_check(pred_variable, gold_variable, mask_variable):
 
 
 def recover_label(pred_variable, gold_variable, mask_variable, label_alphabet):
-    """
-        input:
-            pred_variable (batch_size, sent_len): pred tag result
-            gold_variable (batch_size, sent_len): gold result variable
-            mask_variable (batch_size, sent_len): mask variable
-    """
+
     batch_size = gold_variable.size(0)
     seq_len = gold_variable.size(1)
     mask = mask_variable.cpu().data.numpy()
@@ -448,9 +438,7 @@ if __name__ == '__main__':
     parser.add_argument('--drop', type=float, default=0.5)
 
     parser.add_argument('--use_biword', dest='use_biword', action='store_true', default=False)
-    # parser.set_defaults(use_biword=False)
     parser.add_argument('--use_char', dest='use_char', action='store_true', default=False)
-    # parser.set_defaults(use_biword=False)
     parser.add_argument('--use_count', action='store_true', default=True)
     parser.add_argument('--use_bert', action='store_true', default=True)
 
@@ -475,9 +463,9 @@ if __name__ == '__main__':
     save_data_name = args.savedset
     gpu = torch.cuda.is_available()
 
-    char_emb = "../CNNNERmodel/data/gigaword_chn.all.a2b.uni.ite50.vec" #字符嵌入
-    bichar_emb = "../CNNNERmodel/data/gigaword_chn.all.a2b.bi.ite50.vec"
-    gaz_file = "../CNNNERmodel/data/ctb.50d.vec"
+    char_emb = "../../gigaword_chn.all.a2b.uni.ite50.vec" #字符嵌入
+    bichar_emb = "../../gigaword_chn.all.a2b.bi.ite50.vec"
+    gaz_file = "../../ctb.50d.vec"#字词嵌入
 
     sys.stdout.flush()
 
@@ -550,7 +538,7 @@ if __name__ == '__main__':
         load_model_decode(save_model_dir, data, 'test', gpu, seg)
 
     else:
-        print( "Invalid argument! Please use valid arguments! (train/test/decode)")
+        print( "Invalid argument! ")
 
 
 
