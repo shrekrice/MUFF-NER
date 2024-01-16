@@ -1,7 +1,7 @@
 import os
 import pygame
 
-chinese_dir = '../../CNNNERmodel/chinese'
+chinese_dir = ''
 if not os.path.exists(chinese_dir):
     os.mkdir(chinese_dir)
 

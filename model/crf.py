@@ -1,30 +1,18 @@
 # -*- coding: utf-8 -*-
-# @Author: Jie Yang
-# @Date:   2017-12-04 23:19:38
-# @Last Modified by:   Jie Yang,     Contact: jieynlp@gmail.com
-# @Last Modified time: 2018-05-27 22:48:17
+
 import torch
 import torch.autograd as autograd
 import torch.nn as nn
-import torch.nn.functional as F
-import numpy as np
+
 START_TAG = -2
 STOP_TAG = -1
 
 
-# Compute log sum exp in a numerically stable way for the forward algorithm
-def log_sum_exp(vec, m_size):
-    """
-    calculate log of exp sum
-    args:
-        vec (batch_size, vanishing_dim, hidden_dim) : input tensor  (b,t,t)
-        m_size : hidden_dim
-    return:
-        batch_size, hidden_dim
-    """
-    _, idx = torch.max(vec, 1)  # B * 1 * M
-    max_score = torch.gather(vec, 1, idx.view(-1, 1, m_size)).view(-1, 1, m_size)  # B * M
 
+def log_sum_exp(vec, m_size):
+
+    _, idx = torch.max(vec, 1)
+    max_score = torch.gather(vec, 1, idx.view(-1, 1, m_size)).view(-1, 1, m_size)
     return max_score.view(-1, m_size) + torch.log(torch.sum(torch.exp(vec - max_score.expand_as(vec)), 1)).view(-1, m_size)
 
 class CRF(nn.Module):
@@ -33,55 +21,40 @@ class CRF(nn.Module):
         super(CRF, self).__init__()
         print ("build batched crf...")
         self.gpu = gpu
-        # Matrix of transition parameters.  Entry i,j is the score of transitioning *to* i *from* j.
         self.average_batch = False
         self.tagset_size = tagset_size
-        # # We add 2 here, because of START_TAG and STOP_TAG
-        # # transitions (f_tag_size, t_tag_size), transition value from f_tag to t_tag
+
         init_transitions = torch.zeros(self.tagset_size+2, self.tagset_size+2)
-        # init_transitions = torch.zeros(self.tagset_size+2, self.tagset_size+2)
-        # init_transitions[:,START_TAG] = -1000.0
-        # init_transitions[STOP_TAG,:] = -1000.0
-        # init_transitions[:,0] = -1000.0
-        # init_transitions[0,:] = -1000.0
+
         if self.gpu:
             init_transitions = init_transitions.cuda()
-        self.transitions = nn.Parameter(init_transitions)  #(t+2,t+2)
+        self.transitions = nn.Parameter(init_transitions)
 
         # self.transitions = nn.Parameter(torch.Tensor(self.tagset_size+2, self.tagset_size+2))
         # self.transitions.data.zero_()
 
     def _calculate_PZ(self, feats, mask):
-        """
-            input:
-                feats: (batch, seq_len, self.tag_size+2)  (b,m,t+2)
-                masks: (batch, seq_len)   (b,m)
-        """
+
         batch_size = feats.size(0)
         seq_len = feats.size(1)
         tag_size = feats.size(2)
-        # print feats.view(seq_len, tag_size)
+
         assert(tag_size == self.tagset_size+2)
         mask = mask.transpose(1,0).contiguous()  #(m,b)
         ins_num = seq_len * batch_size
-        ## be careful the view shape, it is .view(ins_num, 1, tag_size) but not .view(ins_num, tag_size, 1)
+
         feats = feats.transpose(1,0).contiguous().view(ins_num,1, tag_size).expand(ins_num, tag_size, tag_size)
-        ## need to consider start
+
         scores = feats + self.transitions.view(1,tag_size,tag_size).expand(ins_num, tag_size, tag_size)
         scores = scores.view(seq_len, batch_size, tag_size, tag_size)
-        # build iter
-        seq_iter = enumerate(scores)   # (index,matrix) index is among the first dim: seqlen
+
+        seq_iter = enumerate(scores)
         _, inivalues = seq_iter.__next__()
-        # only need start from start_tag
+
         partition = inivalues[:, START_TAG, :].clone().view(batch_size, tag_size, 1)
 
-        ## add start score (from start to all tag, duplicate to batch_size)
-        # partition = partition + self.transitions[START_TAG,:].view(1, tag_size, 1).expand(batch_size, tag_size, 1)
-        # iter over last scores
         for idx, cur_values in seq_iter:
-            # previous to_target is current from_target
-            # partition: previous results log(exp(from_target)), #(batch_size * from_target)
-            # cur_values: bat_size * from_target * to_target
+
             
             cur_values = cur_values + partition.contiguous().view(batch_size, tag_size, 1).expand(batch_size, tag_size, tag_size)
             cur_partition = log_sum_exp(cur_values, tag_size)  #(b,t)
@@ -106,14 +79,7 @@ class CRF(nn.Module):
 
 
     def _viterbi_decode(self, feats, mask):
-        """
-            input:
-                feats: (batch, seq_len, self.tag_size+2)
-                mask: (batch, seq_len)
-            output:
-                decode_idx: (batch, seq_len) decoded sequence
-                path_score: (batch, 1) corresponding score for each sequence (to be implementated)
-        """
+
         batch_size = feats.size(0)
         seq_len = feats.size(1)
         tag_size = feats.size(2)
@@ -203,14 +169,7 @@ class CRF(nn.Module):
         
 
     def _score_sentence(self, scores, mask, tags):
-        """
-            input:
-                scores: variable (seq_len, batch, tag_size, tag_size)
-                mask: (batch, seq_len)
-                tags: tensor  (batch, seq_len)
-            output:
-                score: sum of score for gold sequences within whole batch
-        """
+
         # Gives the score of a provided tag sequence
         batch_size = scores.size(1)
         seq_len = scores.size(0)

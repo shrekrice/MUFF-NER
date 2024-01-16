@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-#Word(Lattice) embeddings (ctb.50d.vec)
-#Character embeddings (gigaword_chn.all.a2b.uni.ite50.vec)
+
 
 import time
 import sys

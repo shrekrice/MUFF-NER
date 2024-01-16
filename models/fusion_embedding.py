@@ -1,13 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-@file  : glyce_embedding.py
-@author: zijun
-@contact : zijun_sun@shannonai.com
-@date  : 2020/8/23 10:40
-@version: 1.0
-@desc  : 【char embedding】+【pinyin embedding】+【glyph embedding】 = fusion embedding
-"""
+
 import os
 
 import torch
@@ -18,9 +11,7 @@ from models.pinyin_embedding import PinyinEmbedding
 
 
 class FusionBertEmbeddings(nn.Module):
-    """
-    Construct the embeddings from word, position, glyph, pinyin and token_type embeddings.
-    """
+
 
     def __init__(self, config):
         super(FusionBertEmbeddings, self).__init__()

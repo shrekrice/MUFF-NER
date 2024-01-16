@@ -44,11 +44,11 @@ class MUFFmodel(nn.Module):
 
 
 def clones(module, N):
-    "Produce N identical layers."
+
     return nn.ModuleList([copy.deepcopy(module) for _ in range(N)])
 
 class LayerNorm(nn.Module):
-    "Construct a layernorm module (See citation for details)."
+
     def __init__(self, features, eps=1e-6):
         super(LayerNorm, self).__init__()
         self.a_2 = nn.Parameter(torch.ones(features))
@@ -61,21 +61,16 @@ class LayerNorm(nn.Module):
         return self.a_2 * (x - mean) / (std + self.eps) + self.b_2
 
 class SublayerConnection(nn.Module):
-    """
-    A residual connection followed by a layer norm.
-    Note for code simplicity the norm is first as opposed to last.
-    """
+
     def __init__(self, size, dropout):
         super(SublayerConnection, self).__init__()
         self.norm = LayerNorm(size)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, sublayer):
-        "Apply residual connection to any sublayer with the same size."
         return x + self.dropout(sublayer(self.norm(x)))
 
 class EncoderLayer(nn.Module):
-    "Encoder is made up of self-attn and feed forward (defined below)"
     def __init__(self, size, self_attn, feed_forward, dropout):
         super(EncoderLayer, self).__init__()
         self.self_attn = self_attn
@@ -84,13 +79,13 @@ class EncoderLayer(nn.Module):
         self.size = size
 
     def forward(self, x, mask):
-        "Follow Figure 1 (left) for connections."
+
         x = self.sublayer[0](x, lambda x: self.self_attn(x, x, x, mask))
         return self.sublayer[1](x, self.feed_forward)
 
 
 def attention(query, key, value, mask=None, dropout=None):
-    "Compute 'Scaled Dot Product Attention'"
+
     d_k = query.size(-1)
     scores = torch.matmul(query, key.transpose(-2, -1)) \
              / math.sqrt(d_k)  ## (b,h,l,d) * (b,h,d,l)
@@ -105,7 +100,7 @@ def attention(query, key, value, mask=None, dropout=None):
 
 class MultiHeadedAttention(nn.Module):
     def __init__(self, h, d_model, dropout=0.1):
-        "Take in model size and number of heads."
+
         super(MultiHeadedAttention, self).__init__()
         assert d_model % h == 0
         # We assume d_v always equals d_k
@@ -116,7 +111,7 @@ class MultiHeadedAttention(nn.Module):
         self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, query, key, value, mask=None):
-        "Implements Figure 2"
+
         if mask is not None:
             # Same mask applied to all h heads.
             mask = mask.unsqueeze(1)
@@ -138,7 +133,7 @@ class MultiHeadedAttention(nn.Module):
 
 
 class PositionwiseFeedForward(nn.Module):
-    "Implements FFN equation."
+
     def __init__(self, d_model, d_ff, dropout=0.1):
         super(PositionwiseFeedForward, self).__init__()
         self.w_1 = nn.Linear(d_model, d_ff)
@@ -150,7 +145,7 @@ class PositionwiseFeedForward(nn.Module):
 
 
 class PositionalEncoding(nn.Module):
-    "Implement the PE function."
+
     def __init__(self, d_model, dropout, max_len=5000):
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=dropout)
@@ -172,7 +167,6 @@ class PositionalEncoding(nn.Module):
 
 
 class AttentionModel(nn.Module):
-    "Core encoder is a stack of N layers"
     def __init__(self, d_input, d_model, d_ff, head, num_layer, dropout):
         super(AttentionModel, self).__init__()
         c = copy.deepcopy
@@ -192,7 +186,6 @@ class AttentionModel(nn.Module):
         self.input2model = nn.Linear(d_input, d_model)
 
     def forward(self, x, mask):
-        "Pass the input (and mask) through each layer in turn."
         # x: embedding (b,l,we)
         x = self.posi(self.input2model(x))
         for layer in self.layers:
@@ -201,7 +194,7 @@ class AttentionModel(nn.Module):
 
 
 
-#只看lstm的代码
+
 class MuffNermodel(nn.Module):
 
     def __init__(self, model_type, input_dim, hidden_dim, num_layer, dropout=0.5, gpu=True, biflag=True):

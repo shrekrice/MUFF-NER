@@ -64,13 +64,13 @@ class WPLSTM(nn.Module):
 
 
             #向NERmodel构建input_dim等输入参数
-        ## CNN model
-        if self.model_type == 'CNN':
-            self.NERmodel = NERmodel(model_type='CNN', input_dim=char_feature_dim, hidden_dim=self.hidden_dim, num_layer=self.num_layer, dropout=data.HP_dropout, gpu=self.gpu)
-
-        ## attention model
-        if self.model_type == 'transformer':
-            self.NERmodel = NERmodel(model_type='transformer', input_dim=char_feature_dim, hidden_dim=self.hidden_dim, num_layer=self.num_layer, dropout=data.HP_dropout)
+        # ## CNN model
+        # if self.model_type == 'CNN':
+        #     self.NERmodel = NERmodel(model_type='CNN', input_dim=char_feature_dim, hidden_dim=self.hidden_dim, num_layer=self.num_layer, dropout=data.HP_dropout, gpu=self.gpu)
+        #
+        # ## attention model
+        # if self.model_type == 'transformer':
+        #     self.NERmodel = NERmodel(model_type='transformer', input_dim=char_feature_dim, hidden_dim=self.hidden_dim, num_layer=self.num_layer, dropout=data.HP_dropout)
 
         ## lstm model
         if self.model_type == 'lstm':
