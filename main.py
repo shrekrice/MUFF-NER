@@ -22,8 +22,8 @@ from utils.data import Data
 
 
 
-def data_initialization(data, gaz_file, train_file, dev_file, test_file):#建立语料库"gaz_file指的是../CNNNERmodel/data/ctb.50d.vec"，其他文件指对应文件
-    data.build_alphabet(train_file)#建立的train file的词表，以下同理。
+def data_initialization(data, gaz_file, train_file, dev_file, test_file):
+    data.build_alphabet(train_file)
     data.build_alphabet(dev_file)#建立语料库
     data.build_alphabet(test_file)
     data.build_gaz_file(gaz_file)
@@ -187,7 +187,6 @@ def batchify_with_label(input_batch_list, gpu, num_layer, volatile_flag=False):
     gaz_chars = [sent[7] for sent in input_batch_list]
     gaz_mask = [sent[8] for sent in input_batch_list]
     gazchar_mask = [sent[9] for sent in input_batch_list]
-    ### bert tokens
     bert_ids = [sent[10] for sent in input_batch_list]
 
     word_seq_lengths = torch.LongTensor(list(map(len, words)))
@@ -196,7 +195,7 @@ def batchify_with_label(input_batch_list, gpu, num_layer, volatile_flag=False):
     biword_seq_tensor = autograd.Variable(torch.zeros((batch_size, max_seq_len))).long()
     label_seq_tensor = autograd.Variable(torch.zeros((batch_size, max_seq_len))).long()
     mask = autograd.Variable(torch.zeros((batch_size, max_seq_len))).byte()
-    ### bert seq tensor
+
     bert_seq_tensor = autograd.Variable(torch.zeros((batch_size, max_seq_len+2))).long()
     bert_mask = autograd.Variable(torch.zeros((batch_size, max_seq_len+2))).long()
 
@@ -284,10 +283,10 @@ def train(data, save_model_dir, seg=True):
         random.shuffle(data.train_Ids)
         ## set model in train model
         model.train()
-        model.zero_grad()#梯度清零
+        model.zero_grad()
         batch_size = data.HP_batch_size
         batch_id = 0
-        train_num = len(data.train_Ids)#表示已经训练的轮数
+        train_num = len(data.train_Ids)
         total_batch = train_num//batch_size+1
 
         for batch_id in range(total_batch):
@@ -444,9 +443,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     seed_num = args.seed
-    set_seed(seed_num)#产生随机种子
+    set_seed(seed_num)
 
-    train_file = args.train#定义训练文件，没有则默认是简历的训练文件//11.11
+    train_file = args.train
     dev_file = args.dev
     test_file = args.test
     raw_file = args.raw
@@ -462,9 +461,9 @@ if __name__ == '__main__':
     save_data_name = args.savedset
     gpu = torch.cuda.is_available()
 
-    char_emb = "../../gigaword_chn.all.a2b.uni.ite50.vec" #字符嵌入
+    char_emb = "../../gigaword_chn.all.a2b.uni.ite50.vec"
     bichar_emb = "../../gigaword_chn.all.a2b.bi.ite50.vec"
-    gaz_file = "../../ctb.50d.vec"#字词嵌入
+    gaz_file = "../../ctb.50d.vec"
 
     sys.stdout.flush()
 
@@ -472,7 +471,7 @@ if __name__ == '__main__':
         if os.path.exists(save_data_name):
             print('Loading processed data')
             with open(save_data_name, 'rb') as fp:
-                data = pickle.load(fp)#加载数据集 pickle 模块实现了基本的数据序列与反序列化。序列化对象可以在磁盘上保存对象，并在需要的时候读取出来。任何对象都可以执行序列化操作。
+                data = pickle.load(fp)
             data.HP_num_layer = args.num_layer
             data.HP_batch_size = args.batch_size
             data.HP_iteration = args.num_iter
@@ -485,9 +484,9 @@ if __name__ == '__main__':
             data.HP_dropout = args.drop
             data.HP_use_count = args.use_count
             data.model_type = args.model_type
-            data.use_bert = args.use_bert#添加参数
+            data.use_bert = args.use_bert
         else:
-            data = Data()#Data类，包含许多参数
+            data = Data()
             data.HP_gpu = gpu
             data.HP_use_char = args.use_char
             data.HP_batch_size = args.batch_size
