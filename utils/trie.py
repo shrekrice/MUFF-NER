@@ -1,6 +1,6 @@
 import collections
+
 class TrieNode:
-    # Initialize your data structure here.在这里初始化你的数据结构。
     def __init__(self):
         self.children = collections.defaultdict(TrieNode)
         self.is_word = False
@@ -10,7 +10,6 @@ class Trie:
         self.root = TrieNode()
 
     def insert(self, word):
-        
         current = self.root
         for letter in word:
             current = current.children[letter]
@@ -24,7 +23,7 @@ class Trie:
                 return False
         return current.is_word
 
-    def startsWith(self, prefix):
+    def starts_with(self, prefix):
         current = self.root
         for letter in prefix:
             current = current.children.get(letter)
@@ -32,13 +31,11 @@ class Trie:
                 return False
         return True
 
-
-    def enumerateMatch(self, word, space="_", backward=False):  #space=‘’
+    def enumerate_match(self, word, space="_", backward=False):
         matched = []
 
-        while len(word) > 0:
+        while word:
             if self.search(word):
                 matched.append(space.join(word[:]))
             del word[-1]
         return matched
-
